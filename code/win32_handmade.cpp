@@ -214,7 +214,7 @@ DrawRectangle(Win32_Screen_Buffer *ScreenBuffer, int x70, int y70, int x71, int 
     // WTF AM I A DOING !!! I DONT GET ANYTHIGNG A GJS JGS AMOFSMDOIGNDSOI
     // change this shit ! COLOR STUFF AND WORK RATIO
     // create repo for this shit
-    
+    //hhhhhhhhhhhhhhhhhh
     uint8 *Row = (uint8 *)ScreenBuffer->BitMapInfo_Memory + x0*ScreenBuffer->BytesPerPixel + y0*ScreenBuffer->Stride;
     
     for(int y=y0;y<y1;y++)
