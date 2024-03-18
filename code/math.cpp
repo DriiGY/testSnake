@@ -17,3 +17,10 @@ struct {
         f32 e[2];
     };
 } typedef v2;
+
+
+struct {
+    
+    f32 x;
+    f32 y;
+} typedef vec2;

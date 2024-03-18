@@ -26,8 +26,6 @@ Score of how many foods you ate.
 If snake touches other part of body, game is over!
 
 Amanha:
-Refactor code: create GetDimensions function for client rect width and height.
-
 Create Rectangle for snake.
 Use keys to move snake.
 Add flag exists to say square exists or not. And change pos of rectangle with this info.
@@ -92,8 +90,8 @@ struct Win32_Screen_Buffer {
 };
 
 struct Win32_Screen_Dimensions {
-    int Height;
-    int Width;
+    uint32 Height;
+    uint32 Width;
 };
 
 
@@ -101,9 +99,22 @@ struct Win32_Screen_Dimensions {
 global_variable Win32_Screen_Buffer GlobalScreenBuffer;
 global_variable POINT pt;
 global_variable bool32 GlobalRunning;
-global_variable f32 scale = 0.01f;
-
-
+global_variable f32 Scale = 0.01f;
+global_variable vec2 escala = {1.0,1.0};
+internal vec2
+Win32_ScreenScale(Win32_Screen_Buffer *ScreenBuffer, uint32 NewWidth, uint32 NewHeight)
+{
+    uint32 OriginalWidth = ScreenBuffer->Width;
+    uint32 OriginalHeight = ScreenBuffer->Height;
+    if(OriginalHeight == 0 && OriginalWidth == 0)
+        return {1.0, 1.0};
+    vec2 scale  = {1.0, 1.0};
+    scale.x = (f32)OriginalWidth/(f32)NewWidth;
+    scale.y = (f32)OriginalHeight/(f32)NewHeight;
+    
+    
+    return scale;
+}
 
 inline f32
 Calculate_Aspect_Multiplier()
@@ -167,63 +178,71 @@ v2 player; // this shoudl not be a global_variable
 v2 half_size = { 1, 1};
 uint32 red = 0x00ff0000;
 uint32 blue = 0x000000ff;
-uint32 color = red;
+global_variable uint32 color = red;
 internal void
-DrawRectangle(Win32_Screen_Buffer *ScreenBuffer, int x70, int y70, int x71, int y71, uint32 *color)
+DrawRectangle(Win32_Screen_Buffer *ScreenBuffer, int x0, int y0, int x1, int y1)
 {
     // Get width and height
     // Coordinates need to be inside screen
     
     // check coordinates for square
+    //Create square on point of escala
+    int NewX0 = (f32)escala.x * (f32)x0;
+    int NewY0 = (f32)escala.y * (f32)y0;
+    int NewX1 = (f32)escala.x * (f32)x1;
+    int NewY1 = (f32)escala.y * (f32)y1;
     /*
     x0 = clamp(0, x0, ScreenBuffer->Width);
     y0 = clamp(0, y0, ScreenBuffer->Height);
     x1 = clamp(0, x1, ScreenBuffer->Width);
     y1 = clamp(0, y1, ScreenBuffer->Height);*/
-    
-    f32 aspect_multiplier = Calculate_Aspect_Multiplier();
-    
-    half_size.x *= aspect_multiplier * scale;
-    half_size.y *= aspect_multiplier * scale;
-    
-    player.x *= aspect_multiplier * scale;
-    player.y *= aspect_multiplier * scale;
-    
-    player.x += (f32)GlobalScreenBuffer.Width * .5f;
-    player.y += (f32)GlobalScreenBuffer.Height * .5f;
-    
-    //converts units to pixel and calls draw_rect_in_pixels
-    int x0 = (int)(player.x - half_size.x);
-    int y0 = (int)(player.y - half_size.y);
-    int x1 = (int)(player.x + half_size.x);
-    int y1 = (int)(player.y + half_size.y);
+    //multiply mouse position by a scale
+    // scale =  V2(originalWidth / width, originalHeight / height);
     
     
-    x0 = clamp(0, x0, ScreenBuffer->Width);
-    y0 = clamp(0, y0, ScreenBuffer->Height);
-    x1 = clamp(0, x1, ScreenBuffer->Width);
-    y1 = clamp(0, y1, ScreenBuffer->Height);
+    NewX0 = clamp(0, NewX0, ScreenBuffer->Width);
+    NewY0 = clamp(0, NewY0, ScreenBuffer->Height);
+    NewX1 = clamp(0, NewX1, ScreenBuffer->Width);
+    NewY1 = clamp(0, NewY1, ScreenBuffer->Height);
+    /*
     
-    if(*color == red)
-    {
-        *color = blue;
-    }else 
-    {
-        *color = red;
-    }
-    // WTF AM I A DOING !!! I DONT GET ANYTHIGNG A GJS JGS AMOFSMDOIGNDSOI
-    // change this shit ! COLOR STUFF AND WORK RATIO
-    // create repo for this shit
-    //hhhhhhhhhhhhhhhhhh
-    uint8 *Row = (uint8 *)ScreenBuffer->BitMapInfo_Memory + x0*ScreenBuffer->BytesPerPixel + y0*ScreenBuffer->Stride;
+        f32 aspect_multiplier = Calculate_Aspect_Multiplier();
+        
+        half_size.x *= aspect_multiplier * scale;
+        half_size.y *= aspect_multiplier * scale;
+        
+        player.x *= aspect_multiplier * scale;
+        player.y *= aspect_multiplier * scale;
+        
+        player.x += (f32)GlobalScreenBuffer.Width * .5f;
+        player.y += (f32)GlobalScreenBuffer.Height * .5f;
+        
+        //converts units to pixel and calls draw_rect_in_pixels
+        int x0 = (int)(player.x - half_size.x);
+        int y0 = (int)(player.y - half_size.y);
+        int x1 = (int)(player.x + half_size.x);
+        int y1 = (int)(player.y + half_size.y);
+        
+        
+        x0 = clamp(0, x0, ScreenBuffer->Width);
+        y0 = clamp(0, y0, ScreenBuffer->Height);
+        x1 = clamp(0, x1, ScreenBuffer->Width);
+        y1 = clamp(0, y1, ScreenBuffer->Height);
+
+        */
+    /*
+    char buffer[256];
+    sprintf(buffer, "x:%i, y:%i, x+5:%i, y+5:%i\n",NewX0, NewY0, NewX1, NewY1);
+    OutputDebugStringA(buffer);*/
+    uint8 *Row = (uint8 *)ScreenBuffer->BitMapInfo_Memory + NewX0*ScreenBuffer->BytesPerPixel + NewY0*ScreenBuffer->Stride;
     
-    for(int y=y0;y<y1;y++)
+    for(int y=NewY0;y<NewY1;y++)
     {
         uint32 *Pixel =(uint32 *) (Row );
         
-        for(int x=x0;x<x1;x++)
+        for(int x=NewX0;x<NewX1;x++)
         {
-            *Pixel++ = *color;
+            *Pixel++ = color;
         }
         Row+=ScreenBuffer->Stride; // we use first byte so we can skip one row by mult by stride.
     }
@@ -308,10 +327,11 @@ Wndproc(
         } break;
         case WM_SIZE:
         {
-            RECT ClientRect;
-            GetClientRect(Window, &ClientRect); 
-            int Height = ClientRect.bottom - ClientRect.top;
-            int Width = ClientRect.right - ClientRect.left;
+            Win32_Screen_Dimensions Dimensions = Win32_Get_Screen_Dimensions(Window);
+            escala = Win32_ScreenScale(&GlobalScreenBuffer, Dimensions.Width, Dimensions.Height);
+            char buffer[256];
+            sprintf(buffer, "Scale_x:%.6f, scale_y:%.6f\n",escala.x, escala.y);
+            OutputDebugStringA(buffer);
             //Win32_CreateDibSection(&GlobalScreenBuffer, Width, Height);
             
         }break;
@@ -329,7 +349,11 @@ Wndproc(
             pt.x = LOWORD(LParam);
             pt.y = HIWORD(LParam);
             
-            
+            f32 calc_x = escala.x * pt.x;
+            f32 calc_y = escala.y * pt.y;
+            char buffer[256];
+            sprintf(buffer, "calc_x:%.6f, calc_y:%.6f\n pt.x:%i, pt.y:%i\n",calc_x, calc_y, pt.x, pt.y);
+            OutputDebugStringA(buffer);
         }break;
         default:
         {
@@ -384,7 +408,7 @@ WinMain(HINSTANCE Instance,
             OutputDebugStringA(buffer);
             bool32 RectFlag = false;
             GlobalRunning = true;
-            
+            color = 0x00ffffff;
             //bool32 is_down = ((Message.lParam & (1 << 31)) == 0);
             Win32_CreateDibSection(&GlobalScreenBuffer, Dimensions.Width, Dimensions.Height);
             PaintScreen(&GlobalScreenBuffer, 1, 1, 1);
@@ -408,7 +432,16 @@ WinMain(HINSTANCE Instance,
                 Win32_Screen_Dimensions Dimensions = Win32_Get_Screen_Dimensions(Window);
                 
                 //DrawRectangle(&GlobalScreenBuffer, 0,0,0,0);
-                DrawRectangle(&GlobalScreenBuffer, (int)pt.x, (int)pt.y, (int)(pt.x+5), (int)(pt.y+5), &color);
+                /*
+                if(color == red)
+                {
+                    color = blue;
+                }else 
+                {
+                    color = red;
+                }*/
+                
+                DrawRectangle(&GlobalScreenBuffer, (int)pt.x, (int)pt.y, (int)(pt.x+5), (int)(pt.y+5));
                 Win32_UpdateWindow(&GlobalScreenBuffer, DC, Dimensions.Width, Dimensions.Height);
                 ReleaseDC(Window, DC);
             }
