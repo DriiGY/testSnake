@@ -29,7 +29,20 @@ Amanha:
 Create Rectangle for snake.
 Use keys to move snake.
 Add flag exists to say square exists or not. And change pos of rectangle with this info.
+------------------
+Problem:
+Esta a criar um mini quadrado no canto superior esquerdo.
+ Esta a criar quadrados novos sempre que faco resize acho.
+Quando meto no size mais pequeno e depois aumento o ecra o quadrado aumenta de tamanho.
+Solved:
+kinda.
+Com a flag draw_flag parace qresolver todos estes problemas.
+------------------
+Problem:
+Se desenhar em diferentes tamanhos do ecra, quando faco resize os rectangulos ficam de tamanhos diferentes.
 
+
+-----------------
 */
 
 // Render for painting stuff. or paltform independent file.
@@ -230,10 +243,10 @@ DrawRectangle(Win32_Screen_Buffer *ScreenBuffer, int x0, int y0, int x1, int y1)
         y1 = clamp(0, y1, ScreenBuffer->Height);
 
         */
-    /*
+    
     char buffer[256];
     sprintf(buffer, "x:%i, y:%i, x+5:%i, y+5:%i\n",NewX0, NewY0, NewX1, NewY1);
-    OutputDebugStringA(buffer);*/
+    OutputDebugStringA(buffer);
     uint8 *Row = (uint8 *)ScreenBuffer->BitMapInfo_Memory + NewX0*ScreenBuffer->BytesPerPixel + NewY0*ScreenBuffer->Stride;
     
     for(int y=NewY0;y<NewY1;y++)
@@ -297,6 +310,7 @@ Win32_UpdateWindow(Win32_Screen_Buffer *ScreenBuffer, HDC DeviceContext, int Las
     
 }
 
+global_variable bool32 draw_flag=true;
 
 internal LRESULT  
 Wndproc(
@@ -329,11 +343,12 @@ Wndproc(
         {
             Win32_Screen_Dimensions Dimensions = Win32_Get_Screen_Dimensions(Window);
             escala = Win32_ScreenScale(&GlobalScreenBuffer, Dimensions.Width, Dimensions.Height);
-            char buffer[256];
-            sprintf(buffer, "Scale_x:%.6f, scale_y:%.6f\n",escala.x, escala.y);
-            OutputDebugStringA(buffer);
+            draw_flag = false;
+            //After resize dimensions
+            /*char buffer[256];
+                        sprintf(buffer, "Height:%i,Width:%i\n",Dimensions.Height,Dimensions.Width);
+                        OutputDebugStringA(buffer);*/
             //Win32_CreateDibSection(&GlobalScreenBuffer, Width, Height);
-            
         }break;
         case WM_PAINT:
         {
@@ -354,6 +369,7 @@ Wndproc(
             char buffer[256];
             sprintf(buffer, "calc_x:%.6f, calc_y:%.6f\n pt.x:%i, pt.y:%i\n",calc_x, calc_y, pt.x, pt.y);
             OutputDebugStringA(buffer);
+            draw_flag = true;
         }break;
         default:
         {
@@ -410,6 +426,8 @@ WinMain(HINSTANCE Instance,
             GlobalRunning = true;
             color = 0x00ffffff;
             //bool32 is_down = ((Message.lParam & (1 << 31)) == 0);
+            
+            // ??????? CreateDibSection should be in size?? if its in wm_size it creates a new one every time we resize. is that a problem??? probably
             Win32_CreateDibSection(&GlobalScreenBuffer, Dimensions.Width, Dimensions.Height);
             PaintScreen(&GlobalScreenBuffer, 1, 1, 1);
             while(GlobalRunning)
@@ -440,8 +458,11 @@ WinMain(HINSTANCE Instance,
                 {
                     color = red;
                 }*/
-                
-                DrawRectangle(&GlobalScreenBuffer, (int)pt.x, (int)pt.y, (int)(pt.x+5), (int)(pt.y+5));
+                if (draw_flag)
+                {
+                    
+                    DrawRectangle(&GlobalScreenBuffer, (int)pt.x, (int)pt.y, (int)(pt.x+5), (int)(pt.y+5));
+                }
                 Win32_UpdateWindow(&GlobalScreenBuffer, DC, Dimensions.Width, Dimensions.Height);
                 ReleaseDC(Window, DC);
             }
